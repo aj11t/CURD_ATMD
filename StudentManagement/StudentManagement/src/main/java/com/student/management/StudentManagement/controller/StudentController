@@ -1,0 +1,50 @@
+@RestController
+public class StudentController {
+    private final StudentRepository studentRepository;
+
+    @Autowired
+    public StudentController(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
+
+    @PostMapping("/students")
+    public ResponseEntity<Student> addStudent(@RequestBody Student student) {
+        Student savedStudent = studentRepository.save(student);
+        return new ResponseEntity<>(savedStudent, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/students")
+    public ResponseEntity<List<Student>> getSTudents() {
+        List<Student> students = studentRepository.findAll();
+        return new ResponseEntity<>(students, HttpStatus.OK);
+    }
+
+    @PutMapping("/students/{id}")
+    public ResponseEntity<Student> updateStudent(@PathVariable Long id, @RequestBody Student updatedStudent) {
+        Optional<Student> student = studentRepository.findById(id);
+        if (!student.isPresent()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        updatedStudent.setId(id);
+        Student savedStudent = studentRepository.save(updatedStudent);
+        return new ResponseEntity<>(savedStudent, HttpStatus.OK);
+    }
+
+    @PatchMapping("/students/{id}")
+    public ResponseEntity<Student> patchStudent(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+        Optional<Student> student = studentRepository.findById(id);
+        if (!student.isPresent()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        Student patchStudent = student.get();
+        updates.forEach((key, value) -> {
+            Field field = ReflectionUtils.findField(Student.class, key);
+            field.setAccessible(true);
+            ReflectionUtils.setField(field, patchStudent, value);
+        });
+        Student savedStudent = studentRepository.save(patchStudent);
+        return new ResponseEntity<>(savedStudent, HttpStatus.OK);
+    }
+
+
+}
